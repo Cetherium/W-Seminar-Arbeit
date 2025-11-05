@@ -127,7 +127,7 @@ def neuen_block_senden():
         try:
             response = requests.post(
                 f"{node}/blocks/receive",
-                json={}
+                json={},
                 timeout=5
             )
             if response.status_code == 200:
