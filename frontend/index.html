@@ -1,34 +1,45 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Blockchain Spendenplattform</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
+        <!-- Header -->
         <header>
+            <!-- Admin Navigation Bar -->
             <div class="admin-navbar">
                 <div class="header-title">
                     <h1>Blockchain Spendenplattform</h1>
                     <p class="subtitle">Dezentrale Spenden mit Blockchain-Technologie</p>
                 </div>
-            </div>
-            <div class="admin-controls">
-                <button class="btn btn-secondary" id="refresh-stats">Aktualisieren</button>
-                <button class="btn btn-secondary" id="sync-nodes">Nodes Synchronisieren</button>
-                <button class="btn btn-secondary" id="manual-mine">Manuell minen</button>
-                <button class="btn btn-secondary" id="run-consensus">Konsens starten</button>
+                <div class="admin-controls">
+                    <button class="btn btn-secondary" id="refresh-stats">
+                        Aktualisieren
+                    </button>
+                    <button class="btn btn-secondary" id="sync-nodes">
+                        Nodes synchronisieren
+                    </button>
+                    <button class="btn btn-secondary" id="manual-mine">
+                        Manuell minen
+                    </button>
+                    <button class="btn btn-secondary" id="run-consensus">
+                        Konsens starten
+                    </button>
+                </div>
             </div>
 
+            <!-- Node Status -->
             <div class="node-status">
                 <div class="node" id="node1-status">
                     <div class="node-indicator offline"></div>
                     <div class="node-info">
                         <strong>VPS 1</strong>
                         <span class="node-ip">http://72.61.185.109:5000</span>
-                        <span class="node-blocks"> - Blöcke</span>
+                        <span class="node-blocks">- Blöcke</span>
                     </div>
                 </div>
                 <div class="node" id="node2-status">
@@ -36,20 +47,30 @@
                     <div class="node-info">
                         <strong>VPS 2</strong>
                         <span class="node-ip">http://72.61.185.115:5000</span>
-                        <span class="node-blocks"> - Blöcke</span>
+                        <span class="node-blocks">- Blöcke</span>
                     </div>
                 </div>
+            </div>
         </header>
 
+        <!-- Main Content -->
         <main>
+            <!-- Two Column Layout for Desktop -->
             <div class="grid-layout">
+                <!-- Left Column: Donation Form -->
                 <section class="card donation-section">
                     <h2>Neue Spende</h2>
                     <form id="donation-form">
                         <div class="form-group">
                             <label for="sender">Name (optional)</label>
-                            <input type="text" id="sender" placeholder="Max Mustermann oder anonym" value="Anonymer Spender">
+                            <input
+                                type="text"
+                                id="sender"
+                                placeholder="z.B. Max Mustermann oder anonym"
+                                value="Anonymer Spender"
+                            >
                         </div>
+
                         <div class="form-group">
                             <label for="organization">Organisation *</label>
                             <select id="organization" required>
@@ -58,8 +79,15 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="amount">Betrag (€)</label>
-                            <input type="number" id="amount" placeholder="Betrag in Euro" required min="1" step="1">
+                            <label for="amount">Betrag (€) *</label>
+                            <input
+                                type="number"
+                                id="amount"
+                                min="1"
+                                step="1"
+                                placeholder="z.B. 50"
+                                required
+                            >
                         </div>
                         <div class="donation-button-container">
                             <button type="submit" class="btn btn-primary" id="donate-btn">
@@ -68,11 +96,13 @@
                         </div>
                     </form>
 
-                    <div class="message" id="donation-message"></div>
+                    <div id="donation-message" class="message"></div>
                 </section>
 
+                <!-- Right Column: Quick Stats -->
                 <div class="sidebar-stats">
                     <section class="card quick-stats-card">
+                        <h2>Übersicht</h2>
                         <div class="quick-stats">
                             <div class="quick-stat-item">
                                 <div class="quick-stat-label">Gesamtspenden</div>
@@ -97,6 +127,7 @@
                 </div>
             </div>
 
+            <!-- Two Column Layout: Organizations and Transactions -->
             <div class="grid-layout">
                 <!-- Donations per Organization -->
                 <section class="card org-section">
@@ -114,6 +145,8 @@
                     </div>
                 </section>
             </div>
+
+            <!-- Blockchain View -->
             <section class="card blockchain-section">
                 <div class="blockchain-header">
                     <h2>Blockchain</h2>
@@ -132,7 +165,10 @@
             </section>
         </main>
     </div>
+
+    <!-- Toast Notifications -->
     <div id="toast-container"></div>
+
     <script src="script.js"></script>
 </body>
 </html>

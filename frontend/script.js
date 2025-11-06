@@ -1,31 +1,30 @@
-const NODES = [
+const nodes = [
     'http://72.61.185.109:5000',  // VPS 1
     'http://72.61.185.115:5000',  // VPS 2
 ];
 
-let aktuelleNodeIndex = 0;
+let aktuellenodeindex = 0;
 let organisationen = [];
-let updateIntervall;
+let updateZeitIntervall;
 
 
 function aktuellenNodeholen() {
-    return NODES[aktuelleNodeIndex];
+    return nodes[aktuellenodeindex];
 }
 
 // Wechsle zu der nächsten Node in der Liste
 function zurNaechstenNodeWechseln() {
-    aktuelleNodeIndex = (aktuelleNodeIndex + 1) % NODES.length;
+    aktuellenodeindex = (aktuellenodeindex + 1) % nodes.length;
 }
 
 // API Request -> Wenn scheitert -> Nächste Node versuchen
 async function apiRequest(endpoint, options = {}) {
-    for (let versuch = 0; versuch < NODES.length; versuch++) {
+    for (let versuch = 0; versuch < nodes.length; versuch++) {
         try {
             const node = aktuellenNodeholen();
             const response = await fetch(`${node}${endpoint}`, {
                 ...options,
                 headers: {
-                    'Content-Type': 'application/json',
                     ...options.headers
                 }
             });
@@ -34,19 +33,26 @@ async function apiRequest(endpoint, options = {}) {
                 throw new Error(`Fehlerhafte Antwort von Node: ${response.status}`);
             }
 
-            return await response.json();
+            const result = await response.json();
+
+            // Wenn die API ein Array [data, statusCode] zurückgibt, nimm das erste Element
+            if (Array.isArray(result) && result.length >= 2) {
+                return result[0];
+            }
+
+            return result;
         } catch (error) {
             console.error(`Fehler bei der Anfrage an Node ${aktuellenNodeholen()}:`, error);
             zurNaechstenNodeWechseln();
 
-            if (versuch === NODES.length - 1) {
+            if (versuch === nodes.length - 1) {
                 throw new Error('Alle Nodes sind nicht erreichbar.');
             }
         }
-        
+
     }
-        
-    
+
+
 }
 
 function showToast(nachricht, type = 'success') {
@@ -64,49 +70,67 @@ function showToast(nachricht, type = 'success') {
 
 function datumFormatieren(datumString) {
     const datum = new Date(datumString * 1000);
-    return datum.toLocaleDateString('de-DE');
+    return datum.toLocaleString('de-DE');
 }
 
 
 async function updateNodeStatus() {
-    for (let i = 0; i < NODES.length; i++) {
-        const statusElement = document.querySelector(`#node-status-${i + 1}-status`);
-        const indikator = document.querySelector('.node-indikator');
+    for (let i = 0; i < nodes.length; i++) {
+        const statusElement = document.querySelector(`#node${i + 1}-status`);
+        if (!statusElement) continue;
+
+        const indikator = statusElement.querySelector('.node-indicator');
         const blocksElement = statusElement.querySelector('.node-blocks');
 
         try {
-            const response = await fetch(`${NODES[i]}/health`, { timeout: 5000 });
+            const response = await fetch(`${nodes[i]}/health`, { timeout: 5000 });
             const data = await response.json();
 
-            indikator.classList.remove('offline');
-            indikator.classList.add('online');
-            blocksElement.textContent =  `${data.blocks} Blöcke`
+            if (data && typeof data === 'object') {
+                indikator.classList.remove('offline');
+                indikator.classList.add('online');
+                blocksElement.textContent = `${data.blöcke || data.blocks || 0} Blöcke`;
+            } else {
+                indikator.classList.remove('online');
+                indikator.classList.add('offline');
+                blocksElement.textContent = 'Keine Daten';
+            }
         } catch (error) {
             indikator.classList.remove('online');
             indikator.classList.add('offline');
             blocksElement.textContent = 'Offline';
         }
-        
+
     }
 }
 
 
 async function ladeOrganisationen() {
     try {
-        const data = await apiRequest('/organisations');
-        organisationen = data.organisations;
-        const select = document.querySelector('#organisation-select');
+        const data = await apiRequest('/organizations');
+
+        if (!data || typeof data !== 'object') {
+            console.warn('Keine gültigen Daten von der API erhalten');
+            organisationen = [];
+            return;
+        }
+
+        organisationen = data.organisationen || [];
+        const select = document.querySelector('#organization');
         select.innerHTML = '<option value="">-- Bitte wählen --</option>';
 
-        organisationen.forEach(organisation => {
-            const option = document.createElement('option');
-            option.value = organisation;
-            option.textContent = organisation;
-            select.appendChild(option);
-        })
+        if (organisationen && Array.isArray(organisationen)) {
+            organisationen.forEach(organisation => {
+                const option = document.createElement('option');
+                option.value = organisation;
+                option.textContent = organisation;
+                select.appendChild(option);
+            });
+        }
     } catch (error) {
         console.error('Fehler beim Laden der Organisationen:', error);
         showToast('Fehler beim Laden der Organisationen.', 'error');
+        organisationen = [];
     }
 }
 
@@ -116,7 +140,7 @@ async function TransaktionAbsenden(event) {
 
     const sender = document.getElementById('sender').value || 'Anonymer Spender';
     const empfänger = document.getElementById('organization').value;
-    const betrag = parseFloat(document.getElementById('betrag').value);
+    const betrag = parseFloat(document.getElementById('amount').value);
 
     if (!empfänger) {
         showToast('Bitte geben Sie einen Empfänger an.', 'error');
@@ -128,9 +152,9 @@ async function TransaktionAbsenden(event) {
         return;
     }
 
-    const spendenKnopf = document.getElementById('donate-btn')
+    const spendenKnopf = document.getElementById('donate-btn');
     spendenKnopf.disabled = true;
-    spendenKnopf.textContent = 'Wird gesendet...';
+    spendenKnopf.innerHTML = '<span>⏳ Wird gesendet...</span>';
 
     try {
         await apiRequest('/transactions/new', {
@@ -142,15 +166,23 @@ async function TransaktionAbsenden(event) {
             })
         });
 
-        showToast('Spende erfolgreich gesendet!', 'success');
-        document.getElementById('betrag').value = '';
+        showToast(`Spende von ${betrag}€ an ${empfänger} erfolgreich!`, 'success');
+
+        // Formular zurücksetzen
+        document.getElementById('amount').value = '';
         document.getElementById('organization').value = '';
+
+        // Daten aktualisieren
+        setTimeout(() => {
+            ladeStatistiken();
+            ladeNeueTransaktionen();
+        }, 1000);
     } catch (error) {
         console.error('Fehler beim Spenden:', error);
         showToast('Spende fehlgeschlagen. Versuche es erneut.', 'error');
     } finally {
         spendenKnopf.disabled = false;
-        spendenKnopf.textContent = 'Spenden';
+        spendenKnopf.innerHTML = '<span>💰 Spenden</span>';
     }
 }
 
@@ -158,11 +190,16 @@ async function ladeStatistiken() {
     try {
         const data = await apiRequest('/stats');
 
-        document.querySelector('#total-donations-quick').textContent = `${data.gesamt_transaktionen} €`;
-        document.querySelector('#total-blocks-quick').textContent = data.anzahl_blöcke;
-        document.querySelector('#pending-transactions-quick').textContent = data.anzahl_offene_transaktionen;
+        if (!data || typeof data !== 'object') {
+            console.warn('Keine gültigen Statistiken von der API erhalten');
+            return;
+        }
 
-        const validBadge = document.querySelector('#chain-valid-badge');
+        document.querySelector('#total-donations-quick').textContent = `${data.gesamt_transaktionen || 0} €`;
+        document.querySelector('#total-blocks-quick').textContent = data.anzahl_blöcke || 0;
+        document.querySelector('#pending-transactions-quick').textContent = data.anzahl_offene_transaktionen || 0;
+
+        const validBadge = document.querySelector('#chain-valid-quick');
         if (data.chain_valide) {
             validBadge.innerHTML = '<span class="status-badge valid">✓ Gültig</span>';
         } else {
@@ -171,18 +208,21 @@ async function ladeStatistiken() {
 
         const organisationListe = document.querySelector('#org-list');
         organisationListe.innerHTML = '';
-        const sortierteOrganisationen = Object.entries(data.transaktionen_pro_organisation)
-            .sort((a, b) => b[1] - a[1]);
 
-        sortierteOrganisationen.forEach(([organisation, anzahl]) => {
-            const item = document.createElement('div');
-            item.className = 'org-item';
-            item.innerHTML = `
-                <span class="org-name">${organisation}</span>
-                <span class="org-transactions">${anzahl} Spenden</span>
-            `;
-            organisationListe.appendChild(item);
-        });
+        if (data.transaktionen_pro_organisation && typeof data.transaktionen_pro_organisation === 'object') {
+            const sortierteOrganisationen = Object.entries(data.transaktionen_pro_organisation)
+                .sort((a, b) => b[1] - a[1]);
+
+            sortierteOrganisationen.forEach(([organisation, anzahl]) => {
+                const item = document.createElement('div');
+                item.className = 'org-item';
+                item.innerHTML = `
+                    <span class="org-name">${organisation}</span>
+                    <span class="org-amount">${anzahl} €</span>
+                `;
+                organisationListe.appendChild(item);
+            });
+        }
     } catch (error) {
         console.error('Fehler beim Laden der Statistiken:', error);
     }
@@ -191,20 +231,32 @@ async function ladeStatistiken() {
 async function ladeNeueTransaktionen() {
     try {
         const data = await apiRequest('/chain');
-        const chain = data.chain;
 
+        if (!data || typeof data !== 'object') {
+            console.warn('Keine gültigen Chain-Daten von der API erhalten');
+            const container = document.querySelector('#recent-transactions');
+            container.innerHTML = '<p class="loading">Keine Daten verfügbar</p>';
+            return;
+        }
+
+        const chain = data.chain || [];
         const container = document.querySelector('#recent-transactions');
 
         let alleTransaktionen = [];
-        for (let i = 0; i < chain.length; i++) {
-            const block = chain[i];
-            block.transaktionen.forEach(transaktion => {
-                alleTransaktionen.push({
-                    ...transaktion,
-                    blockIndex: block.index,
-                    zeitspempel: block.zeitstempel
-                });
-            });
+        if (Array.isArray(chain)) {
+            for (let i = 0; i < chain.length; i++) {
+                const block = chain[i];
+                const transactions = block.transaktionen || block.daten || [];
+                if (Array.isArray(transactions)) {
+                    transactions.forEach(transaktion => {
+                        alleTransaktionen.push({
+                            ...transaktion,
+                            blockIndex: block.index,
+                            zeitstempel: block.zeitstempel
+                        });
+                    });
+                }
+            }
         }
 
         // Hier können Sie die gesammelten Transaktionen anzeigen
@@ -212,7 +264,7 @@ async function ladeNeueTransaktionen() {
 
         const letzteTransaktionen = alleTransaktionen.slice(0, 10);
         if(letzteTransaktionen.length === 0) {
-            container.innerHTML = '<p>Keine Transaktionen gefunden.</p>';
+            container.innerHTML = '<p class="loading">Noch keine Transaktionen</p>';
             return;
         }
 
@@ -233,6 +285,8 @@ async function ladeNeueTransaktionen() {
         })
     } catch (error) {
         console.error('Fehler beim Laden der Transaktionen:', error);
+        const container = document.querySelector('#recent-transactions');
+        container.innerHTML = '<p class="loading">Fehler beim Laden</p>';
     }
 
 }
@@ -241,18 +295,25 @@ async function ladeNeueTransaktionen() {
 async function ladeBlockchain() {
     try {
         const data = await apiRequest('/chain');
-        const chain = data.chain;
 
+        if (!data || typeof data !== 'object') {
+            console.warn('Keine gültigen Chain-Daten von der API erhalten');
+            document.querySelector('#blockchain-view').innerHTML =
+                '<p class="loading">Keine Daten verfügbar</p>';
+            return;
+        }
+
+        const chain = data.chain || [];
         const container = document.querySelector('#blockchain-view');
 
-        if (chain.length === 0) {
+        if (!Array.isArray(chain) || chain.length === 0) {
             container.innerHTML = '<p class="loading">Keine Blöcke vorhanden</p>';
             return;
         }
 
         container.innerHTML = '<div class="block-list"></div>';
         const list = container.querySelector('.block-list');
-        
+
         // Neueste Blöcke zuerst
         const reversedChain = [...chain].reverse();
 
@@ -260,9 +321,10 @@ async function ladeBlockchain() {
             const item = document.createElement('div');
             item.className = 'block-item';
 
-            const txCount = block.transaktionen.length;
+            const transactions = block.transaktionen || block.daten || [];
+            const txCount = Array.isArray(transactions) ? transactions.length : 0;
             const time = datumFormatieren(block.zeitstempel);
-            
+
             item.innerHTML = `
                 <div class="block-header">
                     <span class="block-index">Block #${block.index}</span>
@@ -272,7 +334,7 @@ async function ladeBlockchain() {
                     <strong>Hash:</strong> ${block.hash}
                 </div>
                 <div class="block-hash">
-                    <strong>Previous:</strong> ${block.previous_hash}
+                    <strong>Previous:</strong> ${block.vorheriger_hash}
                 </div>
                 <div class="block-transactions">
                     <strong>Transaktionen:</strong> ${txCount} | <strong>Nonce:</strong> ${block.nonce}
@@ -281,9 +343,9 @@ async function ladeBlockchain() {
             list.appendChild(item);
         });
 
-}catch (error) {
+    } catch (error) {
         console.error('Fehler beim Laden der Blockchain:', error);
-        document.getElementById('blockchain-view').innerHTML = 
+        document.querySelector('#blockchain-view').innerHTML =
             '<p class="loading">Fehler beim Laden der Blockchain</p>';
     }
 }
@@ -297,16 +359,16 @@ async function syncNodes() {
     
     try {
         // Registriere Nodes gegenseitig
-        await fetch(`${NODES[0]}/nodes/register`, {
+        await fetch(`${nodes[0]}/nodes/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ node_address: NODES[1] })
+            body: JSON.stringify({ node_address: nodes[1] })
         });
         
-        await fetch(`${NODES[1]}/nodes/register`, {
+        await fetch(`${nodes[1]}/nodes/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ node_address: NODES[0] })
+            body: JSON.stringify({ node_address: nodes[0] })
         });
         
         msg.className = 'message success';
@@ -339,9 +401,9 @@ async function manualMine() {
         
         // Daten aktualisieren
         setTimeout(() => {
-            loadStatistics();
-            loadBlockchain();
-            loadRecentTransactions();
+            ladeStatistiken();
+            ladeBlockchain();
+            ladeNeueTransaktionen();
             updateNodeStatus();
         }, 2000);
         
@@ -365,8 +427,8 @@ async function runConsensus() {
     try {
         // Konsens auf beiden Nodes starten
         await Promise.all([
-            fetch(`${NODES[0]}/consensus`, { method: 'POST' }),
-            fetch(`${NODES[1]}/consensus`, { method: 'POST' })
+            fetch(`${nodes[0]}/consensus`, { method: 'POST' }),
+            fetch(`${nodes[1]}/consensus`, { method: 'POST' })
         ]);
         
         msg.className = 'message success';
@@ -375,8 +437,8 @@ async function runConsensus() {
         
         // Daten aktualisieren
         setTimeout(() => {
-            loadStatistics();
-            loadBlockchain();
+            ladeStatistiken();
+            ladeBlockchain();
             updateNodeStatus();
         }, 1000);
         
@@ -394,7 +456,7 @@ async function runConsensus() {
 
 async function initializeApp() {
     console.log('🚀 Blockchain Donation Platform wird gestartet...');
-    console.log('Nodes:', NODES);
+    console.log('Nodes:', nodes);
     
     // Event Listeners
     document.getElementById('donation-form').addEventListener('submit', TransaktionAbsenden);
@@ -412,7 +474,7 @@ async function initializeApp() {
     await ladeBlockchain();
     
     // Auto-Update alle 10 Sekunden
-    updateIntervall = setInterval(async () => {
+    updateZeitIntervall = setInterval(async () => {
         await updateNodeStatus();
         await ladeStatistiken();
         await ladeNeueTransaktionen();
@@ -426,7 +488,7 @@ document.addEventListener('DOMContentLoaded', initializeApp);
 
 // Cleanup beim Verlassen der Seite
 window.addEventListener('beforeunload', () => {
-    if (updateIntervall) {
-        clearInterval(updateIntervall);
+    if (updateZeitIntervall) {
+        clearInterval(updateZeitIntervall);
     }
 });

@@ -60,7 +60,7 @@ def konsens_logik():
                         )
                         block.hash = block_daten['hash']
                         temporäre_chain.append(block)
-                    
+
                     # Valide ?
                     if blockchain.ist_erhaltene_chain_valide(temporäre_chain):
                         maximale_lange = erhaltene_länge
@@ -69,29 +69,27 @@ def konsens_logik():
                         print("Erhaltene Kette ist gültig und wird übernommen.")
                     else:
                         print("Erhaltene Kette ist ungültig.")
-        
+
         except requests.exceptions.Timeout:
             print(f"Timeout bei der Anfrage an Node {node}")
         except Exception as e:
             print(f"Fehler bei der Anfrage an Node {node}: {e}")
-            return False
-        
-        if ersetzt:
-            blockchain.chain = neue_chain
-            print("Die aktuelle Chain wurde durch die neue Chain ersetzt.")
-            return {
-                'nachricht': "Die aktuelle Chain wurde durch die neue Chain ersetzt.",
-                'länge': len(blockchain.chain),
-                'ersetzt': True
-            }
-        
-        else:
-            print("Die aktuelle Chain ist die längste. Keine Änderungen vorgenommen.")
-            return {
-                'nachricht': "Die aktuelle Chain ist die längste. Keine Änderungen vorgenommen.",
-                'länge': len(blockchain.chain),
-                'ersetzt': False
-            }
+
+    if ersetzt:
+        blockchain.chain = neue_chain
+        print("Die aktuelle Chain wurde durch die neue Chain ersetzt.")
+        return {
+            'nachricht': "Die aktuelle Chain wurde durch die neue Chain ersetzt.",
+            'länge': len(blockchain.chain),
+            'ersetzt': True
+        }
+    else:
+        print("Die aktuelle Chain ist die längste. Keine Änderungen vorgenommen.")
+        return {
+            'nachricht': "Die aktuelle Chain ist die längste. Keine Änderungen vorgenommen.",
+            'länge': len(blockchain.chain),
+            'ersetzt': False
+        }
         
 def neue_transaktion_senden(transaktion):
     "Eine Methode, die eine neue Transaktion an alle bekannten Nodes sendet."
@@ -103,10 +101,10 @@ def neue_transaktion_senden(transaktion):
     
     for node in bekannte_nodes:
         try:
-            response =request.post(
+            response = requests.post(
                 f"{node}/transactions/receive",
                 json=transaktion,
-                timeoout=5
+                timeout=5
             )
             if response.status_code == 201:
                 print(f"Transaktion erfolgreich an Node {node} gesendet.")
@@ -123,7 +121,7 @@ def neuen_block_senden():
         print("Keine bekannten Nodes vorhanden. Block wird nicht gesendet.")
         return
     
-    for node in peer_nodes:
+    for node in bekannte_nodes:
         try:
             response = requests.post(
                 f"{node}/blocks/receive",
@@ -268,7 +266,7 @@ def empfange_transaktion():
         if (transaktion['sender'] == data['sender'] and
             transaktion['empfänger'] == data['empfänger'] and
             transaktion['betrag'] == data['betrag'] and
-            abs(transaktion['zeitspempel'] - data['zeitstempel']) < 1):
+            abs(transaktion['zeitstempel'] - data['zeitstempel']) < 1):
 
             print(f"Duplikat-Transaktion ignoriert")
             return jsonify({'nachricht': 'Duplikat-Transaktion ignoriert.'}, 200)
@@ -302,9 +300,7 @@ def empfange_block_benachrichtigung():
     print("Empfangene Block-Benachrichtigung von Peer-Node.")
     ergebnis = konsens_logik()
 
-    return jsonify({
-        ergebnis
-    }), 200
+    return jsonify(ergebnis), 200
 
 
 @app.route('/consensus', methods=['POST'])
@@ -313,9 +309,7 @@ def konsens_starten():
     print("Manueller Konsens-Start ausgelöst.")
     ergebnis = konsens_logik()
 
-    return jsonify({
-        ergebnis
-    }), 200
+    return jsonify(ergebnis), 200
 
 @app.route('/nodes/register', methods=['POST'])
 def node_registrieren():
