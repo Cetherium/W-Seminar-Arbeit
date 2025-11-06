@@ -159,6 +159,9 @@ async function TransaktionAbsenden(event) {
     try {
         await apiRequest('/transactions/new', {
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({
                 sender: sender,
                 empfänger: empfänger,
@@ -393,7 +396,12 @@ async function manualMine() {
     btn.textContent = '⏳ Mining...';
     
     try {
-        await apiRequest('/mine', { method: 'POST' });
+        await apiRequest('/mine', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
         
         msg.className = 'message success';
         msg.textContent = '✅ Block erfolgreich gemined!';
