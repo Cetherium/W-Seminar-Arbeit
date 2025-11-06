@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd w-seminararbeit || exit
+cd W-Seminar-Arbeit || exit
 
 source venv/bin/activate
 
