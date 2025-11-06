@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd donation_backend || exit
+cd w-seminararbeit || exit
 
 source venv/bin/activate
 
