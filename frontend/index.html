@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="admin-navbar">
+                <div class="header-title">
+                    <h1>Blockchain Spendenplattform</h1>
+                    <p class="subtitle">Dezentrale Spenden mit Blockchain-Technologie</p>
+                </div>
+            </div>
+            <div class="admin-controls">
+                <button class="btn btn-secondary" id="refresh-stats">Aktualisieren</button>
+                <button class="btn btn-secondary" id="sync-nodes">Nodes Synchronisieren</button>
+                <button class="btn btn-secondary" id="manual-mine">Manuell minen</button>
+                <button class="btn btn-secondary" id="run-consensus">Konsens starten</button>
+            </div>
+
+            <div class="node-status">
+                <div class="node" id="node1-status">
+                    <div class="node-indicator offline"></div>
+                    <div class="node-info">
+                        <strong>VPS 1</strong>
+                        <span class="node-ip">http://72.61.185.109:5000</span>
+                        <span class="node-blocks"> - Blöcke</span>
+                    </div>
+                </div>
+                <div class="node" id="node2-status">
+                    <div class="node-indicator offline"></div>
+                    <div class="node-info">
+                        <strong>VPS 2</strong>
+                        <span class="node-ip">http://72.61.185.115:5000</span>
+                        <span class="node-blocks"> - Blöcke</span>
+                    </div>
+                </div>
+        </header>
+
+        <main>
+            <div class="grid-layout">
+                <section class="card donation-section">
+                    <h2>Neue Spende</h2>
+                    <form id="donation-form">
+                        <div class="form-group">
+                            <label for="sender">Name (optional)</label>
+                            <input type="text" id="sender" placeholder="Max Mustermann oder anonym" value="Anonymer Spender">
+                        </div>
+                        <div class="form-group">
+                            <label for="organization">Organisation *</label>
+                            <select id="organization" required>
+                                <option value="">-- Bitte wählen --</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="amount">Betrag (€)</label>
+                            <input type="number" id="amount" placeholder="Betrag in Euro" required min="1" step="1">
+                        </div>
+                        <div class="donation-button-container">
+                            <button type="submit" class="btn btn-primary" id="donate-btn">
+                                <span style="font-weight: bold;">Spenden</span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="message" id="donation-message"></div>
+                </section>
+
+                <div class="sidebar-stats">
+                    <section class="card quick-stats-card">
+                        <div class="quick-stats">
+                            <div class="quick-stat-item">
+                                <div class="quick-stat-label">Gesamtspenden</div>
+                                <div class="quick-stat-value" id="total-donations-quick">0 €</div>
+                            </div>
+                            <div class="quick-stat-item">
+                                <div class="quick-stat-label">Blöcke</div>
+                                <div class="quick-stat-value" id="total-blocks-quick">0</div>
+                            </div>
+                            <div class="quick-stat-item">
+                                <div class="quick-stat-label">Ausstehend</div>
+                                <div class="quick-stat-value" id="pending-transactions-quick">0</div>
+                            </div>
+                            <div class="quick-stat-item">
+                                <div class="quick-stat-label">Chain Status</div>
+                                <div class="quick-stat-value" id="chain-valid-quick">
+                                    <span class="status-badge">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div class="grid-layout">
+                <!-- Donations per Organization -->
+                <section class="card org-section">
+                    <h2>Spenden pro Organisation</h2>
+                    <div class="org-list" id="org-list">
+                        <!-- Wird dynamisch gefüllt -->
+                    </div>
+                </section>
+
+                <!-- Recent Transactions -->
+                <section class="card transactions-section">
+                    <h2>Letzte Transaktionen</h2>
+                    <div id="recent-transactions">
+                        <p class="loading">Lade Transaktionen...</p>
+                    </div>
+                </section>
+            </div>
+            <section class="card blockchain-section">
+                <div class="blockchain-header">
+                    <h2>Blockchain</h2>
+                    <button class="btn btn-secondary btn-small" id="refresh-chain">
+                        🔄 Aktualisieren
+                    </button>
+                </div>
+                <div id="blockchain-view">
+                    <p class="loading">Lade Blockchain...</p>
+                </div>
+            </section>
+
+            <!-- Admin Messages -->
+            <section class="card admin-section">
+                <div id="admin-message" class="message"></div>
+            </section>
+        </main>
+    </div>
+    <div id="toast-container"></div>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -369,7 +369,7 @@ def node_statistiken():
         'transaktionen_pro_organisation': transaktionen_pro_organisation,
         'anzahl_blöcke': len(blockchain.chain),
         'anzahl_offene_transaktionen': len(blockchain.mempool),
-        'anzahl_blöcke': len(blockchain.chain)
+        'chain_valide': blockchain.ist_chain_valide()
     }), 200
 
 if __name__ == '__main__':
