@@ -33,7 +33,7 @@ def konsens_logik():
     for node in bekannte_nodes:
         try:
             print(f"Abfrage der Node {node}...")
-            response = requests.get(f'http://{node}/chain', timeout=5) # Anfrage mit Timeout von 5 Sekunden
+            response = requests.get(f'{node}/chain', timeout=5) # Anfrage mit Timeout von 5 Sekunden
 
             if response.status_code == 200:
                 daten = response.json()
