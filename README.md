@@ -29,3 +29,4 @@
     open frontend/index.html
     ```
 
+6. Entweder ./sync_backens.sh ausführen oder im Frontend auf "Node Synchronisieren" klicken, die Nodes kennen sich sonst nicht.

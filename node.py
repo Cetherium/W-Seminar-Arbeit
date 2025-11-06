@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from blockchain import Blockchain
+from blockchain import Blockchain, Block
 import requests
 import threading
 import time
