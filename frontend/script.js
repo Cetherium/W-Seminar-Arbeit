@@ -135,7 +135,7 @@ async function ladeOrganisationen() {
 }
 
 
-async function TransaktionAbsenden(event) {
+async function transaktionAbsenden(event) {
     event.preventDefault();
 
     const sender = document.getElementById('sender').value || 'Anonymer Spender';
