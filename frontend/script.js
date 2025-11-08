@@ -467,7 +467,7 @@ async function initializeApp() {
     console.log('Nodes:', nodes);
     
     // Event Listeners
-    document.getElementById('donation-form').addEventListener('submit', TransaktionAbsenden);
+    document.getElementById('donation-form').addEventListener('submit', transaktionAbsenden);
     document.getElementById('refresh-stats').addEventListener('click', ladeStatistiken);
     document.getElementById('refresh-chain').addEventListener('click', ladeBlockchain);
     document.getElementById('sync-nodes').addEventListener('click', syncNodes);
